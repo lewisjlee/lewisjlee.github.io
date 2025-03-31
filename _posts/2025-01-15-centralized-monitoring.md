@@ -290,7 +290,7 @@ data:
     discovery.type: single-node
     # discovery.seed_host: [엘라스틱서치 노드 주소 list]
     # cluster.initial_master_nodes: elasticsearch-0
-    network.host: 0.0.0.0st: 0.0.0.0
+    network.host: 0.0.0.0
 ```
 
 ### Kibana

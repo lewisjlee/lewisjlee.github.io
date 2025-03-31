@@ -130,7 +130,7 @@ etcd는 쿠버네티스 클러스터에 대한 데이터를 key=value 형태로 
 
 ## APIServer의 인증서
 
-API 서버는 다른 컴포넌트로부터 접근 받는 서버 역할과 kubelet 데몬에 파드 실행을 명령하거나 etcd에 데이터를 저장하는 클라이언트 역할을 함께 수행합니다. 그래서 서버 인증서와kubelet 접근을 위한 클라이언트 인증서, etcd 접근을 위한 클라이언트 인증서를 하나씩 보유하고 있습니다. 서버 인증서와 kubelet 클라이언트 인증서는 클러스터 CA에 의해 서명되어 있고 etcd 클라이언트 인증서는 etcd CA에 의해 서명되어 있습니다.
+API 서버는 다른 컴포넌트로부터 접근 받는 서버 역할과 kubelet 데몬에 파드 실행을 명령하거나 etcd에 데이터를 저장하는 클라이언트 역할을 함께 수행합니다. 그래서 서버 인증서와 kubelet 접근을 위한 클라이언트 인증서, etcd 접근을 위한 클라이언트 인증서를 하나씩 보유하고 있습니다. 서버 인증서와 kubelet 클라이언트 인증서는 클러스터 CA에 의해 서명되어 있고 etcd 클라이언트 인증서는 etcd CA에 의해 서명되어 있습니다.
 
 <img title="" src="../../images/2024-12-26-ssl_tls_kubernetes/2025-01-06-20-09-26-image.png" alt="loading-ag-1759" data-align="center">{: .align-center}
 
