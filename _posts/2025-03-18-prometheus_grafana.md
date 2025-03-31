@@ -610,3 +610,5 @@ Elton Stoneman. (2021). 쿠버네티스 교과서. 길벗출판사
 [GitHub - kubernetes/kube-state-metrics: Add-on agent to generate and expose cluster-level metrics.](https://github.com/kubernetes/kube-state-metrics?tab=readme-ov-file)
 
 [Comparison to InfluxDB](https://prometheus.io/docs/introduction/comparison/#prometheus-vs-influxdb)
+
+[SLASH 24 - Kubernetes CPU 알뜰하게 사용하기 - YouTube](https://youtu.be/WdikCm_CYms?feature=shared)
