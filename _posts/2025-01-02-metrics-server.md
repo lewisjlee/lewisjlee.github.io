@@ -8,7 +8,7 @@ sidebar:
     nav: "docs"
 ---
 
-metrics-server는 쿠버네티스 리소스의 성능 지표를 kubelet으로부터 연동하는 addon 컴포넌트입니다. 쿠버네티스를 기반으로 서비스를 운영하다 보면 사이트 이벤트와 같은 이슈를 앞두고 더 많은 워크로드로 확장해야 할 때가 있을 것입니다. 그 때 컨트롤러 내 파드 수를 자동으로 늘릴 수 있도록 하기 위해서는 **HPA(Horizontal Pod AutoScaler)** 를 배포해야 하는데요. 이 때 HPA는 metrics-server에서 수집된 성능 지표를 기반으로 워크로드를 확장할 수 있습니다.
+**metrics-server는 쿠버네티스 리소스의 성능 지표를 kubelet으로부터 연동하는 addon 컴포넌트입니다.** 쿠버네티스를 기반으로 서비스를 운영하다 보면 사이트 이벤트와 같은 이슈를 앞두고 더 많은 워크로드로 확장해야 할 때가 있을 것입니다. 그 때 컨트롤러 내 파드 수를 자동으로 늘릴 수 있도록 하기 위해서는 **HPA(Horizontal Pod AutoScaler)** 를 배포해야 하는데요. 이 때 HPA는 metrics-server에서 수집된 성능 지표를 기반으로 워크로드를 확장할 수 있습니다.
 
 metrics-server는 현재 시점의 리소스의 **CPU나 Memory 사용량 같은 기본적인 metric만을 연동**하기 때문에 더 상세한 metric을 확인하고 HPA로 확장할 수 있게 하기 위해서는 **Prometheus** 같은 도구를 사용하는 것이 효과적입니다.
 
