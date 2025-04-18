@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "커널 파라미터, 어떻게 설정해야 할까?"
+title:  "커널 파라미터, 그게 뭐야?"
 categories: Linux
 tag: [Linux]
 author_profile: false
@@ -26,77 +26,65 @@ sidebar:
 
 주로 사용되는 sysctl command는 다음과 같습니다.
 
-* **sysctl -a** : 현재 설정된 모든 커널 파라미터를 출력
+- **sysctl -a** : 현재 설정된 모든 커널 파라미터를 출력
 
-* **sysctl -p** : /etc/sysctl.conf에 설정된 값들을 재부팅 없이 즉시 적용
+- **sysctl -p** : /etc/sysctl.conf에 설정된 값들을 재부팅 없이 즉시 적용
 
-* **sysctl -w** : 특정 커널 파라미터 값을 일시적으로 적용할 때 사용할 수 있습니다. 설정한 값은 시스템 재부팅 시 초기화되며, 중지 및 재부팅이 가능한 환경인 전제 하에 원하는 커널 파라미터 값을 테스트할 때 유용하게 사용할 수 있습니다.
+- **sysctl -w** : 특정 커널 파라미터 값을 일시적으로 적용할 때 사용할 수 있습니다. 설정한 값은 시스템 재부팅 시 초기화되며, 중지 및 재부팅이 가능한 환경인 전제 하에 원하는 커널 파라미터 값을 테스트할 때 유용하게 사용할 수 있습니다.
 
-## 어떤 파라미터를 설정해야 할까?
+## 주요 파라미터 종류
 
-이제부터 제가 실제로 실무에서 적용했던 주요 커널 파라미터들을 살펴보려고 하는데요.
-
-```
-kernel.sysrq = 0    #   매직 키 비활성화
-kernel.core_uses_pid = 1    #   Core Dump 생성 활성화
-```
+**어떤 커널 파라미터를 어떻게 설정해야 할지는 서버의 역할과 사양, 시스템 인프라 구조에 따라 모두 다르기 때문에 여러 테스트를 통해 가장 적합한 값을 찾아서 적용하는 것이 좋습니다.** 저 또한 모든 커널 파라미터 종류를 다 알지 못하고 이전에 설정했던 값들이 해당 서버에 가장 핏한 값이었는지 100% 확신하기 어렵기 때문에 보다 많은 추가 학습을 필요로 할 것 같습니다. 따라서 실제로 어떤 파라미터를 어떤 값으로 설정했는지 그대로 드러내기보단 제가 실제로 적용했던 주요 커널 파라미터의 종류를 그 의미와 함께 살펴보는 것이 좋을 것 같다고 판단했습니다.
 
 먼저 kernel session의 파라미터입니다.
 
-**매직 키(Magic System Request Key)**는 커널이 어떤 워크로드를 바쁘게 진행하고 있더라도 항상 요청에 반응할 수 있도록 할 수 있는 기능입니다. System hang이 걸렸을 때 긴급 조치가 가능하도록 할 수 있는 기능으로 유용하게 쓰일 것 같지만, <span style="color:red">물리적으로 서버에 연결할 수만 있다면 계정 권한을 타지 않고 시스템을 악의적으로 제어할 수 있기 때문에</span> 일반적으로 0을 설정하여 비활성화 합니다.
+- `kernel.sysrq` - 매직 키 활성화 여부
+- `kernel.core_uses_pid` - Core Dump 생성 활성화 여부
 
-**코어 덤프(Core Dump)**는 장애 등의 이유로 프로세스가 비정상적으로 종료되었을 때 프로세스와 관련된 메모리를 dump 백업할 수 있는 기능입니다. 일부 애플리케이션에서는 관련 프로세스가 죽었을 때 log를 남기지 않는 경우가 있는데요. 이 때 코어 덤프를 활성화 시키면 dump된 파일을 갖고 문제를 분석할 수 있습니다. 기본값이 0으로 비활성화 되어 있기 때문에 1로 설정하여 활성화 해줍니다.
+**매직 키(Magic System Request Key)**는 커널이 어떤 워크로드를 바쁘게 진행하고 있더라도 항상 요청에 반응할 수 있도록 할 수 있는 기능입니다. 온프레미스 환경에서 System hang이 걸렸을 때 긴급 조치가 가능하도록 할 수 있는 기능으로 유용하게 쓰일 것 같지만, <span style="color:red">물리적으로 서버에 연결할 수만 있다면 계정 권한을 타지 않고 시스템을 악의적으로 제어할 수 있기 때문에</span> 일반적으로 0을 설정합니다.
 
-### 웹 서비스 운영을 위한 파라미터
+**코어 덤프(Core Dump)**는 장애 등의 이유로 프로세스가 비정상적으로 종료되었을 때 프로세스와 관련된 메모리를 dump 백업할 수 있는 기능입니다. 일부 애플리케이션에서는 관련 프로세스가 죽었을 때 log를 남기지 않는 경우가 있는데요. 이 때 코어 덤프를 활성화 시키면 dump된 파일을 갖고 문제를 분석할 수 있습니다.
 
-```
-net.core.somaxconn=65535    #   Connection 대기 최대 수
-net.ipv4.tcp_max_syn_backlog = 8192 #   SYN 수신 Backlog 최대 크기
-net.ipv4.tcp_fin_timeout = 10   #   FIN Segment 대기 시간
-net.ipv4.tcp_keepalive_time = 10    #    TCP KeepAlive 주기
-net.ipv4.tcp_tw_reuse = 0   #   TIME_WAIT 상태 로컬 포트 재사용 비활성화
-net.ipv4.ip_local_port_range = 15000    64000   #   클라이언트 로컬 포트 범위
-net.ipv4.tcp_syn_retries = 2    #   Active SYN 재전송 횟수
-net.ipv4.tcp_retries1 = 2   #   TCP 연결 자체에 문제가 있을 때 재시도 횟수
-```
+### 웹 서비스 운영에 사용되는 네트워크 파라미터
 
-이번에는 **메모리 64G** 기준 WEB/WAS 서버에 설정할 수 있는 네트워크 관련 파라미터를 살펴보겠습니다. 웹 서비스 인프라 특성 상 외부에서 많은 TCP 연결 요청을 수신하고 WAS나 DB 등 내부 컴포넌트와 많은 Connection을 생성하게 되는데요. 그래서 Connection 대기 최대 수와 SYN Backlog를 넉넉하게 설정하고 FIN 대기 시간과 KeepAlive 시간을 짧게 설정하여 서버가 동시 접속자 수와 신규 접속을 원활하게 처리할 수 있도록 해줬습니다. 그리고 상품 주문과 결제 등 트랜잭션을 데이터 유실 없이 정확한 처리와 응답을 보장하기 위해 4-way handshake가 완전히 종료되지 않은 TIME_WAIT 상태의 소켓의 재사용을 비활성화 해줬습니다.
+- `net.core.somaxconn` - 최대 소켓 Connection 성사 수
+- `net.ipv4.tcp_max_syn_backlog` - SYN 수신 대기열(Backlog) 최대 크기
+- `net.ipv4.tcp_fin_timeout` - FIN Segment 대기 시간
+- `net.ipv4.tcp_keepalive_time` - TCP KeepAlive 주기
+- `net.ipv4.tcp_tw_reuse` - TIME_WAIT 상태 로컬 포트 재사용 활성화 여부
+- `net.ipv4.ip_local_port_range` - 클라이언트 로컬 포트 범위
+- `net.ipv4.tcp_syn_retries` - Active SYN 재전송 횟수
+- `net.ipv4.tcp_retries1` - TCP 연결 자체에 문제가 있을 때 재시도 횟수
 
-대부분의 리눅스 커널의 로컬 포트 번호 범위는 32768 ~ 60999로 지정되어 있는데요. 접속이 늘어날수록 워크로드가 많아지면서 WEB에서 WAS로, WAS에서 DB로 가는 세션 수 또한 증가하기 때문에 15000 ~ 64000번으로 늘려 주었습니다. 그리고 TCP 연결 재시도 횟수는 새로 생성되는 Connection에 대한 지연을 고려하여 기본값보다 낮게 각각 2로 설정하였습니다.
+`net.ipv4.tcp_max_syn_backlog`는 클라이언트로부터 SYN 세그먼트를 수신한 SYN-RECV 상태의 연결 최대 수를 나타내고, `net.core.somaxconn`은 최종적으로 ACK를 받고 ESTABLISH 상태가 된 소켓 연결의 최대 수를 나타냅니다. 따라서 **외부로부터 많은 연결 요청을 받는 웹 서버**에서 값을 넉넉하게 늘려줘야 하는데요. 낮게 설정하면 일부 TCP 연결이 거부되거나 정상적으로 성사되지 않을 수 있고, 너무 높게 설정하면 메모리 사용량이 증가하여 시스템 성능 저하를 불러올 수 있으므로 메모리 크기를 고려하여 설정해야 합니다.
 
-추가적으로 데이터베이스는 다른 서버에 주로 먼저 연결 요청을 하지 않지만 애플리케이션 서버로부터 많은 요청을 수신하기 때문에 somaxconn와 max_syn_backlog 정도는 꼭 설정해 주는 것이 좋습니다.
+대부분의 리눅스 커널의 로컬 포트 번호 범위는 32768 ~ 60999로 지정되어 있는데요. 서버 간 API 통신이 늘어날 때 클라이언트가 더 많은 로컬 포트를 사용할 수 있도록 범위를 늘려줄 수 있습니다.
 
 ### 악성 공격 대응을 위한 파라미터
 
-```
-net.ipv4.tcp_syncookies = 1 #   보내는 SYN Segment에 Cookie값 추가
-net.ipv4.tcp_synack_retries = 2 #   Passive SYN/ACK 재전송 횟수
-```
+- `net.ipv4.tcp_syncookies` - 보내는 SYN Segment에 Cookie값 추가
+- `net.ipv4.tcp_synack_retries` - Passive SYN/ACK 재전송 횟수
 
-SYN Flooding 공격을 방지하고 정상적인 TCP 연결을 보장하기 위한 설정입니다. <span style="color:red">SYN Flooding은 다수의 좀비 노드를 통해 SYN 세그먼트를 동시다발적으로 전송하고 돌아오는 ACK/SYN에 대한 응답을 제공하지 않아 시스템을 장시간 대기 상태로 만드는 공격</span>인데요. ACK/SYN를 응답할 때 쿠킷값을 추가하여 같은 Source로부터 다시 수신된 SYN를 무시하고 SYN/ACK 응답 횟수 제한을 설정하여 SYN Flooding 공격에 효과적으로 대응할 수 있습니다.
+SYN Flooding 공격을 방지하고 정상적인 TCP 연결을 보장하기 위한 파라미터입니다. <span style="color:red">SYN Flooding은 다수의 좀비 노드를 통해 SYN 세그먼트를 동시다발적으로 전송하고 돌아오는 ACK/SYN에 대한 응답을 제공하지 않아 시스템을 장시간 대기 상태로 만드는 공격인데요.</span> ACK/SYN 세그먼트를 응답할 때 쿠킷값을 추가하여 같은 Source로부터 다시 수신된 SYN를 무시하고 SYN/ACK 응답 횟수 제한을 설정하여 SYN Flooding 공격에 효과적으로 대응할 수 있습습니다.
 
-```
-net.ipv4.conf.all.arp_notify = 1    #   IPv4 주소나 장비 변경 시 알림
-net.ipv4.conf.default.accept_redirects = 0  #   redirect된 ICMP 수신 비활성화
-net.ipv4.conf.default.send_redirects = 0    #   ICMP Packet redirect 전송 비활성화
-net.ipv4.conf.default.accept_source_route = 0   #   Source Routing 수신 비활성화
-net.ipv4.conf.default.secure_redirects = 0  #   게이트웨이로부터의 redirect 비활성화
-net.ipv4.icmp_echo_ignore_broadcasts = 1    #   Broadcast로부터의 ICMP 수신 비활성화
-net.ipv4.icmp_ignore_bogus_error_responses = 1  #   비정상 TCP/IP Header의 ICMP Packet 무시
-```
+- `net.ipv4.conf.all.arp_notify`- IPv4 주소나 장비 변경 시 알림
+- `net.ipv4.conf.default.accept_redirects` - redirect된 ICMP 수신 활성화 여부
+- `net.ipv4.conf.default.send_redirects` - ICMP Packet redirect 전송 활성화 여부
+- `net.ipv4.conf.default.accept_source_route` - Source Routing 수신 활성화 여부
+- `net.ipv4.conf.default.secure_redirects` - 게이트웨이로부터의 redirect 활성화 여부
+- `net.ipv4.icmp_echo_ignore_broadcasts` - Broadcast로부터의 ICMP 수신 활성화 여부
+- `net.ipv4.icmp_ignore_bogus_error_responses` - 비정상 TCP/IP Header의 ICMP Packet 무시 여부
 
-서버가 스푸핑(spoofing)과 스머프(smurf) 공격에 악용되지 않도록 하는 설정입니다. 자신의 서버를 경유하여 변조된 악성 패킷을 공격 대상으로 리다이렉트하는 것을 방지하고 반대로 자신의 서버가 리다이렉트된 악성 패킷을 수신하지 못하도록 설정할 수 있습니다. 특히 외부에 공인 IP로 개방된 서버의 경우 이러한 파라미터들이 필수적으로 적용될 것으로 생각되네요.
+서버가 스푸핑(spoofing)과 스머프(smurf) 공격에 악용되지 않도록 하는 설정입니다. 자신의 서버를 경유하여 변조된 악성 패킷을 공격 대상으로 리다이렉트하는 것을 방지하고 반대로 자신의 서버가 리다이렉트된 악성 패킷을 수신하지 못하도록 설정할 수 있습니다. 특히 공인 IP를 갖고 인터넷에 개방된 서버의 경우 이러한 파라미터들이 필수적으로 적용될 것으로 생각되네요.
 
 ### 메모리 할당 및 Swap
 
-```
-vm.swappiness = 20  #   SWAP 메모리 사용 범위
-vm.overcommit_memory = 1    #   메모리 공간 할당이 항상 성공하도록 메모리 overcommit을 허용
-```
+- `vm.swappiness` - SWAP 메모리 사용 범위
+- `vm.overcommit_memory` - 메모리 overcommit을 허용 여부
 
-Swap 및 메모리 할당에 대한 파라미터입니다. swappiness 값은 보통 10이 권장되지만 메모리 성능을 더욱 넉넉하게 유지하기 위해 20으로 설정하고, overcomit_memory 값을 1로 설정하여 메모리 overcommit을 허용해 주었습니다.
+Swap 및 메모리 할당에 대한 파라미터입니다. 메모리 성능을 더욱 넉넉하게 유지하기 위해 `vm.swappiness`를 기본값보다 조금 더 높게 설정해주는 것도 좋은 방법이 될 수 있습니다.
 
-메모리 commit은 프로세스가 메모리 공간을 할당받는 것을 의미하는데요. 애플리케이션을 구동하다 보면 자식 프로세스가 부모 프로세스의 메모리 주소 공간을 그대로 복사하는 fork() 시스템 콜 호출이 발생할 수 있습니다. 그렇게 되면 **실제 메모리 공간을 초과하는 메모리 공간 할당이 필요하게 되죠. 이것을 overcommit이라고 합니다.** 하지만 대부분 fork()에서 exec() 시스템 콜로 전환되어 결과적으로 초기 할당받은 메모리를 모두 사용하지 않기 때문에 일시적 fork()를 위한 overcommit 과정을 허용하여 프로세스 생성과 진행을 원활하게 할 수 있습니다.
+메모리 commit은 프로세스가 메모리 공간을 할당받는 것을 의미하는데요. 애플리케이션을 구동하다 보면 자식 프로세스가 부모 프로세스의 메모리 주소 공간을 그대로 복사하는 fork() 시스템 콜 호출이 발생할 수 있습니다. 그렇게 되면 **실제 메모리 공간을 초과하는 메모리 공간 할당이 필요하게 되죠. 이것을 overcommit이라고 합니다.** 하지만 대부분 fork()에서 exec() 시스템 콜로 전환되어 결과적으로 초기 할당받은 메모리를 모두 사용하지 않기 때문에 일시적인 fork()를 위한 overcommit을 활성화하여 프로세스 생성과 진행을 원활하게 할 수 있습니다.
 
 ### Docker, 쿠버네티스 운영에서의 커널 파라미터
 
@@ -108,4 +96,12 @@ net.ipv4.ip_forward = 1
 EOF
 ```
 
-번외로 컨테이너 운영 환경에서 필수적으로 설정해야 할 커널 파라미터가 있습니다. 리눅스 Host는 **iptables** 정책을 통해 네임스페이스 기반으로 격리되어 동작하는 컨테이너에 트래픽을 라우팅하는데요. 이를 위해 호스트에 수신된 패킷을 네임스페이스로 Forwarding하고 **브릿지(Bridge)** 네트워크가 iptables 정책을 통해 패킷을 주고받을 수 있도록 위의 파라미터 값들을 1로 활성화해야 합니다.
+컨테이너 운영 환경에서 필수적으로 설정해야 할 커널 파라미터가 있습니다. 리눅스 Host는 **iptables** 정책을 통해 네임스페이스 기반으로 격리되어 동작하는 컨테이너에 트래픽을 라우팅하는데요. 이를 위해 호스트에 수신된 패킷을 네임스페이스로 Forwarding하고 **브릿지(Bridge)** 네트워크가 iptables 정책을 통해 패킷을 주고받을 수 있도록 위의 파라미터 값들을 1로 활성화해야 합니다.
+
+## 커널 파라미터 설정 시 주의사항
+
+리눅스 커널에 존재하는 많은 다양한 커널 파라미터들의 의미를 모두 정확하게 아는 것은 어렵습니다. 그래서 <span style="color:red">특정 파라미터에 대해 자신이 아는 바가 정확하지 않을 수 있고, 함부로 조정했다가 시스템이 예상치 못한 반응을 할 수도 있기 때문에 운영 환경에 무턱대고 적용하는 것은 매우 위험할 수 있습니다.</span> 따라서 시스템 성능 개선의 방편으로 커널 파라미터 튜닝을 고려하고 있다면 먼저 비슷한 환경을 구축하고 테스트한 다음 적용하는 식으로 안전하게 진행하는 것이 좋습니다.
+
+#### References
+
+[S-Core - 커널 옵션 대 방출! Kubernetes 환경을 최적화하라](https://s-core.co.kr/insight/view/%EC%BB%A4%EB%84%90-%EC%98%B5%EC%85%98-%EB%8C%80-%EB%B0%A9%EC%B6%9C-kubernetes-%ED%99%98%EA%B2%BD%EC%9D%84-%EC%B5%9C%EC%A0%81%ED%99%94%ED%95%98%EB%9D%BC/)
