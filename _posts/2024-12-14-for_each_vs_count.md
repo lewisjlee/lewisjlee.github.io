@@ -61,7 +61,7 @@ resource "aws_key_pair" "mykeypair" {
 }
 ```
 
-각 인스턴스의 suffix를 ec2_instances 라는 list에 저장하고 ec2_instance 모듈을 통해 인스턴스를 생성해 보겠습니다. count는 **지정된 수만큼 리소스를 프로비저닝할 때** 사용하는 구문으로 **정수값만 취급합니다.** 그래서 ec2_instances 라는 list의 element 개수를 값으로 전달하여 총 3대의 인스턴스를 생성하고 suffix를 붙여 인스턴스 name에 suffix를 붙였습니다.
+각 인스턴스의 suffix를 ec2_instances 라는 list에 저장하고 ec2_instance 모듈을 통해 인스턴스를 생성해 보겠습니다. count는 **지정된 수만큼 리소스를 프로비저닝할 때** 사용하는 구문으로 **정수값만 취급합니다.** 그래서 ec2_instances 라는 list의 element 개수를 값으로 전달하여 총 3대의 인스턴스를 생성하고 suffix를 붙여 인스턴스를 naming 하였습니다.
 
 <img title="" src="../../images/2024-12-14-for_each_vs_count/e27951ccef7a1c22513276666691bcafa83f3b93.png" alt="loading-ag-1014" data-align="center">
 
