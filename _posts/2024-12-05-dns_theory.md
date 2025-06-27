@@ -66,7 +66,7 @@ SLD와 TLD를 합친 형태로, 사이트의 고유한 이름과 운영 목적, 
 
 #### 1) Local DNS에 질의
 
-hosts 파일에 정보가 없으면 사용자 PC에 설정된 Local DNS 서버에 **UDP 기반 dns 프로토콜**을 통해 질의합니다. Local DNS에 캐시된 데이터가 있으면 이를 응답하고, 없으면 Root/TLD/SLD 네임 서버에 차례로 질의하며 도메인을 해석하는 과정을 수행하게 됩니다. 바로 이 과정을 **Recursive Query**라고 합니다.
+hosts 파일에 정보가 없으면 사용자 PC에 설정된 Local DNS 서버에 **UDP 기반 DNS 프로토콜**을 통해 질의합니다. Local DNS에 캐시된 데이터가 있으면 이를 응답하고, 없으면 Root/TLD/SLD 네임 서버에 차례로 질의하며 도메인을 해석하는 과정을 수행하게 됩니다. 바로 이 과정을 **Recursive Query**라고 합니다.
 
 Local DNS는 ISP 업체가 설정한 DNS 서버 혹은 사내에서 운영하는 DNS 서버를 지정하거나 구글 DNS 서버(8.8.8.8)와 같이 개인이 원하는 DNS 서버를 지정할 수 있습니다. 
 
