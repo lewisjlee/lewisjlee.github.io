@@ -54,7 +54,7 @@ sidebar:
 - `net.ipv4.tcp_tw_reuse` - TIME_WAIT 상태 로컬 포트 재사용 활성화 여부
 - `net.ipv4.ip_local_port_range` - 클라이언트 로컬 포트 범위
 - `net.ipv4.tcp_syn_retries` - Active SYN 재전송 횟수
-- `net.ipv4.tcp_retries1` - IP 레이어에 네트워크가 잘못 되었는지 확인을 요청하는 횟수
+- `net.ipv4.tcp_retries1` - TCP 세션 연결 후 요청에 대한 ACK 응답을 받지 못할 때의 초기 재전송 횟수
 
 `net.ipv4.tcp_max_syn_backlog`는 클라이언트로부터 SYN 세그먼트를 수신한 **SYN-RECV** 상태의 연결 최대 수를 나타내고, `net.core.somaxconn`은 최종적으로 ACK를 받고 **ESTABLISH** 상태가 된 소켓 연결의 최대 수를 나타냅니다. 따라서 **외부로부터 많은 연결 요청을 받는 웹 서버**에서는 이런 값들을 넉넉하게 늘려줘야 하는데요. 너무 낮게 설정하면 일부 TCP 연결이 거부되거나 정상적으로 성사되지 않을 수 있고, 너무 높게 설정하면 메모리 사용량이 증가하여 시스템 성능 저하를 불러올 수 있으므로 메모리 크기를 고려하여 설정해야 합니다.
 
