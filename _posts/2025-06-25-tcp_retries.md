@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "TCP 통신에서의 재전송과 Timeout"
+title:  "TCP 재전송과 Timeout"
 categories: Linux
 tag: [Linux, Network]
 author_profile: false
