@@ -16,7 +16,7 @@ metrics-server는 쿠버네티스 클러스터 구성 시 기본으로 설치되
 
 [metrics-server Installation](https://github.com/kubernetes-sigs/metrics-server?tab=readme-ov-file)
 
-## kubelet에서의 성능 metric 연동 오류
+## kubelet에서의 성능 metric 수집 오류
 
 저는 helm 차트를 통해 metrics-server를 배치하고 나서 리소스 기본 성능을 확인하기 위해 kubectl top node를 실행했지만 "error: Metrics API not available" 이라는 에러 메시지를 확인할 수 있었습니다. metrics-server 파드의 상태를 확인해보니 Readiness probe 실패로 파드가 다운되어 있었는데요. 다운되기 전 출력한 log를 확인해보니 다음과 같은 메시지를 확인할 수 있었습니다.
 
