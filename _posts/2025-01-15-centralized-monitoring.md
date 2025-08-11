@@ -165,7 +165,7 @@ data:
         Parser            docker
         Refresh_Interval  10
   
-    parsers.conf: |
+  parsers.conf: |
     [PARSER]
         Name    kube-tag
         Format  regex
