@@ -2,7 +2,7 @@
 layout: single
 title:  "EFK와 ELK Stack으로 중앙화된 log 모니터링 체험하기"
 categories: SRE
-tag: [SRE, ELK, Elasticsearch, FluentD, Logstash, Kibana, Kubernetes, 쿠버네티스]
+tag: [SRE, ELK, EFK, Elasticsearch, FluentD, Logstash, Kibana, Kubernetes, 쿠버네티스]
 author_profile: false
 sidebar:
     nav: "docs"
@@ -98,6 +98,7 @@ metadata:
     app: sre
 rules:
 - apiGroups: [""]
+  # 파드 및 네임스페이스 정보 접근 권한
   resources:
   - namespaces
   - pods
@@ -162,7 +163,20 @@ data:
         Tag_Regex         (?<pod_name>[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_(?<namespace_name>[^_]+)_(?<container_name>.+)-(?<docker_id>[a-z0-9]{64})\.log$
         Path              /var/log/containers/*.log
         Parser            docker
-        Refresh_Interval  10 
+        Refresh_Interval  10
+  
+    parsers.conf: |
+    [PARSER]
+        Name    kube-tag
+        Format  regex
+        Regex   ^(?<namespace_name>[^_]+)\.(?<container_name>.+)\.(?<pod_name>[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)\.(?<docker_id>[a-z0-9]{64})-$
+
+    [PARSER]
+        Name   nginx
+        Format regex
+        Regex  ^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?
+        Time_Key time
+        Time_Format %d/%b/%Y:%H:%M:%S %z
 
   filter.conf: |
     [FILTER]
@@ -185,30 +199,15 @@ data:
         Host            elasticsearch
         Index           test
         Generate_ID     On
-
-  parsers.conf: |
-    [PARSER]
-        Name    kube-tag
-        Format  regex
-        Regex   ^(?<namespace_name>[^_]+)\.(?<container_name>.+)\.(?<pod_name>[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)\.(?<docker_id>[a-z0-9]{64})-$
-
-    [PARSER]
-        Name   nginx
-        Format regex
-        Regex  ^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?
-        Time_Key time
-        Time_Format %d/%b/%Y:%H:%M:%S %z
 ```
 
 플루언트 비트는 본래 IoT와 같은 임베디드 환경에 적합한 경량 플루언트디를 만들기 위해 개발되었고, **일반적인 TCP 프로토콜, PostgreSQL DB, Azure 로그 애널리틱스 서비스 등 다양한 플러그인을 지원합니다.** 하지만 어디까지나 경량화된 버전이기 때문에 **MongoDB나 S3 등 더 다양한 출력 대상을 지원하는 로그 수집기를 찾는다면 FluentD를 사용하는 것이 좋습니다.**
 
 ### Elasticsearch
 
-엘라스틱서치는 Master-Slave 관계를 뚜렷하게 할 수 있는 **Statefulset**으로 배치합니다. 저는 vagrant 공유 디렉토리를 mount하여 파드가 삭제되어도 데이터를 저장할 수 있도록 했는데요. **실제 운영 환경에서는 클러스터와 스토리지 유형에 따라 영구 볼륨을 생성하고 volumeClaimTemplate를 통해 데이터를 스토리지에 보관할 수 있습니다.**
+엘라스틱서치는 Master-Slave 관계를 뚜렷하게 할 수 있는 **Statefulset**으로 실행합니다. 여기서는 vagrant 공유 디렉토리를 mount하여 파드가 삭제되어도 데이터를 저장할 수 있도록 했는데 **실제 운영 환경에서는 클러스터와 스토리지 유형에 따라 영구 볼륨을 생성하고 volumeClaimTemplate를 통해 데이터를 스토리지에 보관할 수 있습니다.**
 
-파드 내에는 엘라스틱서치가 mount된 볼륨에 접근할 수 있는 권한을 가질 수 있도록 소유자 정보를 변경하는 초기 컨테이너가 있습니다. 그리고 엘라스틱서치는 java 기반으로 개발되어 실행되기 때문에 JVM Heap 메모리 사이즈 설정값을 테스트 환경에 적절하게 변경해 주었습니다.
-
-엘라스틱서치는 외부에서 **9200** 포트로 접근할 수 있고 비록 이번 테스트에는 환경 상 단일 노드로 실행하지만 여러 레플리카로 실행할 경우 서로 **9300** 포트를 통해 통신하게 됩니다.
+엘라스틱서치는 외부에서 **9200** 포트로 접근할 수 있고 비록 이번 테스트에는 환경 상 단일 노드로 실행하지만 여러 레플리카로 실행할 경우 **9300** 포트로 서로 통신합니다.
 
 ```yaml
 apiVersion: apps/v1
@@ -246,6 +245,7 @@ spec:
         - containerPort: 9300
           name: inter-node
         env:
+        # JVM Heap 메모리 사이즈 설정
         - name: ES_JAVA_OPTS
           value: "-Xms256m -Xmx256m"
         volumeMounts:
@@ -282,7 +282,7 @@ spec:
   type: ClusterIP
 ```
 
-단일 노드로 실행하기 때문에 엘라스틱서치에 주입할 설정 파일의 discovery.type 값을 single-node 설정해 주었는데요. **만약 여러 레플리카로 실행하게 된다면 discovery.seed_host 값에 엘라스틱서치 노드 주소들을, cluster.initial_master_nodes 값에 마스터로 지정할 노드 hostname을 설정해 주어야 오류를 피할 수 있습니다.**
+단일 노드로 실행하기 때문에 엘라스틱서치에 주입할 설정 파일의 discovery.type 값을 single-node 설정해 주었는데요. **만약 여러 레플리카로 실행하게 된다면 `discovery.seed_host`에 엘라스틱서치 노드 주소들을, `cluster.initial_master_nodes`에 마스터로 지정할 노드 hostname을 설정해 주어야 오류를 피할 수 있습니다.**
 
 ```yaml
 apiVersion: v1
@@ -382,9 +382,11 @@ spec:
 
 <img title="" src="../../images/2025-01-15-centralized-monitoring/671cfe670dd8032345f7676e4a543a6c4365b438.png" alt="loading-ag-703" data-align="center">
 
-그렇다면 Logstash를 사용한 ELK Stack은 어떨까요? ELK Stack에서는 주로 FileBeat를 사용하여 로그를 수집하고 Logstash를 사용하여 Parsing 및 출력을 처리하게 됩니다. 엘라스틱서치와 키바나는 그대로 두고 **FileBeat + Logstash**가 플루언트 비트처럼 쿠버네티스 메타데이터가 추가된 nginx 로그를 수집하고 처리할 수 있도록 **elastic 사의 공식 문서**를 참고하여 configuration 해줬습니다.
+ELK Stack에서는 주로 FileBeat를 사용하여 로그를 수집하고 Logstash를 사용하여 Parsing 및 출력하게 됩니다. 엘라스틱서치와 키바나는 그대로 두고 **FileBeat + Logstash**가 플루언트 비트처럼 쿠버네티스 메타데이터가 추가된 nginx 로그를 수집하고 처리할 수 있도록 **elastic사의 공식 문서**를 참고하여 configuration 해줬습니다.
 
 ### FileBeat
+
+FileBeat 설정에 **processor**를 정의하여 쿠버네티스 메타 데이터를 붙일 수 있도록 해주었고 플루언트 비트에서 사용한 serviceaccount와 RBAC를 동일하게 적용하여 마찬가지로 데몬셋 형태로 실행했습니다.
 
 ```yaml
 apiVersion: v1
@@ -460,11 +462,9 @@ spec:
           path: /var/lib/docker/containers
 ```
 
-FileBeat 설정에 **processor**를 정의하여 쿠버네티스 메타 데이터를 붙일 수 있도록 해줬고 플루언트 비트에서 사용한 serviceaccount와 RBAC를 동일하게 적용하고 데몬셋 형태로 실행해 주었습니다.
-
 ### Logstash
 
-Logstash는 FileBeat에서 수집하고 메타데이터를 얹은 로그를 필터를 통해 파싱하는데요. Logstash 공식 문서를 참고하여 로그 메시지를 아파치 로그 형태로 변환하고 중복되거나 불필요한 필드를 제거한 다음 엘라스틱서치에 output하는 파이프라인 설정 파일 configmap을 작성해 주었습니다.
+Logstash는 FileBeat에서 수집하고 메타데이터를 얹은 로그를 필터를 통해 파싱합니다. Logstash 공식 문서를 참고하여 로그 메시지를 아파치 로그 형태로 변환하고 중복되거나 불필요한 필드를 제거한 다음 엘라스틱서치에 output하는 파이프라인 설정 파일 configmap을 작성해 주었습니다.
 
 ```yaml
 apiVersion: v1
@@ -513,7 +513,7 @@ data:
     path.config: /usr/share/logstash/pipeline
 ```
 
-Logstash 역시 java로 개발된 도구라서 어느 정도의 힙 메모리 사이즈를 요구했는데요. 엘라스틱서치의 절반 가량인 128로 맞추고 실행해보니 FileBeat에서 정상적으로 세션을 맺지 못하는 현상이 있어서 똑같이 256으로 설정하고 실행해 주었습니다. 이러한 Logstash를 엘라스틱서치 파드와 같은 노드에 배치하면 노드 메모리 사용률과 LoadAvg가 증가하여 전체 파이프라인에 영향을 줄 수 있어요. 그래서 매니페스트에 **podAntiAffinity**를 추가하여 엘라스틱서치와 다른 노드에 파드를 배치하도록 해줬습니다.
+Logstash 역시 java로 개발된 도구라 어느 정도의 힙 메모리 사이즈를 요구했는데요. 그래서 Logstash를 엘라스틱서치와 같은 노드에 배치하면 노드 메모리 사용률과 LoadAvg가 증가하여 파이프라인 성능에 영향을 줄 수 있습니다. 그래서 매니페스트에 **podAntiAffinity**를 추가하여 엘라스틱서치와 다른 노드에 파드를 배치하도록 해주었습니다.
 
 ```yaml
 apiVersion: apps/v1
@@ -560,6 +560,7 @@ spec:
           readOnly: true
           subPath: logstash.conf
         env:
+          # JVM Heap 메모리 사이즈 설정
           - name: LS_JAVA_OPTS
             value: "-Xms256m -Xmx256m"
       volumes:
