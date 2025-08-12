@@ -32,7 +32,7 @@ Elasticsearch는 강력한 검색 엔진 기능을 갖춘 Document 기반 데이
 
 ### 최소 버전의 경량화 로그 수집기 Fluent-Bit
 
-FluentD는 CNCF 재단에서 개발한 로그 수집기로 1000가지 이상의 다양한 출력 대상 플러그인을 지원하는데요. 저는 설정 방법이 크게 다르지 않은 최소 버전의 **Fluent-Bit**를 사용하여 구성해 봤습니다.
+FluentD는 CNCF 재단에서 개발한 로그 수집기로 1000가지 이상의 다양한 출력 대상 플러그인을 지원하는데요. 저는 FluentD의 최소 버전으로 알려진 **Fluent-Bit**를 사용하여 구성해 봤습니다.
 
 Fluent-Bit는 **Daemonset**으로 실행하여 각 노드에 파드를 하나씩 배치해서 로그를 수집하고, 애플리케이션 로그 뿐만 아니라 노드의 시스템 로그 또한 수집하고 처리할 수 있습니다.
 
@@ -136,7 +136,7 @@ subjects:
 
 설정을 보면 로그에 붙일 태그에 대한 정규 표현식이 정의되어 있고 최종적으로 특정 태그를 가진 로그를 엘라스틱서치에 저장한다고 설정되어 있습니다. 어떤 OUTPUT 규칙과도 일치하지 않는 로그는 출력되거나 저장되지 않습니다.
 
-저는 샘플 Nginx 애플리케이션의 로그를 수집하고 처리해보기 위해 nginx PARSER와 OUTPUT 규칙을 추가해 주었습니다.
+저는 샘플 Nginx 로그를 수집하고 처리해보기 위해 nginx PARSER와 OUTPUT 규칙을 추가해 주었습니다.
 
 ```yaml
 apiVersion: v1
@@ -159,9 +159,9 @@ data:
   input.conf: |
     [INPUT]
         Name              tail
-        Tag               kube.<namespace_name>.<container_name>.<pod_name>.<docker_id>-
+        Tag               kube.<namespace_name>.<container_name>.<pod_name>.<docker_id>
         Tag_Regex         (?<pod_name>[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_(?<namespace_name>[^_]+)_(?<container_name>.+)-(?<docker_id>[a-z0-9]{64})\.log$
-        Path              /var/log/containers/*.log
+        Path              /var/log/containers/*todo-proxy*.log
         Parser            docker
         Refresh_Interval  10
   
@@ -169,7 +169,7 @@ data:
     [PARSER]
         Name    kube-tag
         Format  regex
-        Regex   ^(?<namespace_name>[^_]+)\.(?<container_name>.+)\.(?<pod_name>[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)\.(?<docker_id>[a-z0-9]{64})-$
+        Regex   ^(?<namespace_name>[^_]+)\.(?<container_name>.+)\.(?<pod_name>[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)\.(?<docker_id>[a-z0-9]{64})$
 
     [PARSER]
         Name   nginx
@@ -191,11 +191,11 @@ data:
     [OUTPUT]
         Name            stdout
         Format          json_lines
-        Match           kube.nginx-test.*
+        Match           kube.*
 
     [OUTPUT]
         Name            es
-        Match           kube.nginx-test.*
+        Match           kube.*
         Host            elasticsearch
         Index           test
         Generate_ID     On
@@ -401,7 +401,7 @@ data:
     filebeat.inputs:
     - type: container
       paths:
-        - /var/log/containers/*nginx-test*.log
+        - /var/log/containers/*todo-proxy*.log
 
     processors:
     - add_kubernetes_metadata:
@@ -504,6 +504,7 @@ data:
       elasticsearch {
         hosts => ["elasticsearch:9200"]
         manage_template => false
+        index => "todo-logstash"
       }
       stdout { codec => rubydebug }
     }
@@ -579,8 +580,6 @@ spec:
 ```
 
 <img title="" src="../../images/2025-01-15-centralized-monitoring/2025-01-22-00-06-34-image.png" alt="loading-ag-456" data-align="center">
-
-원래는 플루언트 비트와 같은 test 인덱스에 로그를 저장하려고 했는데 자꾸만 오류가 발생했습니다. 그래서 output에 인덱스를 따로 지정하지 않고 실행해 주었는데요. Logstash를 사용하면 자체적으로 날짜를 붙인 인덱스를 생성하고 로그를 저장하는 것 같았습니다. 아마 이러한 default 동작과 충돌하여 오류가 발생한 것이 아닌가 짐작은 해봅니다만,, 아직까지 자세한 이유는 잘 모르겠습니다.
 
 ## 정해진 답은 없다.
 
