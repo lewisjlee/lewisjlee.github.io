@@ -197,7 +197,7 @@ data:
         Name            es
         Match           kube.*
         Host            elasticsearch
-        Index           test-fluent-bit
+        Index           todo-fluent-bit
         Generate_ID     On
 ```
 
