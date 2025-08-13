@@ -67,7 +67,7 @@ spec:
           readOnly: true
       volumes:
       - name: fluent-bit-config
-        configMap:
+        ConfigMap:
           name: fluent-bit-config
       - name: log-dir
         hostPath:
@@ -124,7 +124,7 @@ subjects:
 
 ### Fluent-Bit Configuration
 
-다음은 플루언트 비트에 주입할 설정 파일 configmap입니다. 플루언트 비트는 로그 수집 및 처리 과정을 **INPUT->PARSER->FILTER->OUTPUT** 순서대로 처리하는데요. 각 단계별로 configuration 파일이 configmap 안에서 나뉘어 있는 것을 볼 수 있습니다.
+다음은 플루언트 비트에 주입할 설정 파일 ConfigMap입니다. 플루언트 비트는 로그 수집 및 처리 과정을 **INPUT->PARSER->FILTER->OUTPUT** 순서대로 처리하는데요. 각 단계별로 configuration 파일이 ConfigMap 안에서 나뉘어 있는 것을 볼 수 있습니다.
 
 - INPUT : 로그 수집 경로와 접미사로 붙일 태그를 정의
 
@@ -136,7 +136,7 @@ subjects:
 
 설정을 보면 로그에 붙일 태그에 대한 정규 표현식이 정의되어 있고 최종적으로 특정 태그를 가진 로그를 엘라스틱서치에 저장한다고 설정되어 있습니다. 어떤 OUTPUT 규칙과도 일치하지 않는 로그는 출력되거나 저장되지 않습니다.
 
-저는 샘플 Nginx 로그를 수집하고 처리해보기 위해 nginx PARSER와 OUTPUT 규칙을 추가해 주었습니다.
+저는 샘플 Nginx 로그를 수집하고 처리해보기 위해 nginx PARSER와 OUTPUT 규칙을 추가해 봤습니다.
 
 ```yaml
 apiVersion: v1
@@ -162,7 +162,7 @@ data:
         Tag               kube.<namespace_name>.<container_name>.<pod_name>.<docker_id>
         Tag_Regex         (?<pod_name>[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_(?<namespace_name>[^_]+)_(?<container_name>.+)-(?<docker_id>[a-z0-9]{64})\.log$
         Path              /var/log/containers/*todo-proxy*.log
-        Parser            docker
+        Parser            nginx
         Refresh_Interval  10
   
   parsers.conf: |
@@ -197,7 +197,7 @@ data:
         Name            es
         Match           kube.*
         Host            elasticsearch
-        Index           test
+        Index           test-fluent-bit
         Generate_ID     On
 ```
 
@@ -257,7 +257,7 @@ spec:
           mountPath: /usr/share/elasticsearch/data
       volumes:
       - name: es-configs
-        configMap:
+        ConfigMap:
           name: es-configs
       - name: elasticsearch-persistent-storage
         hostPath:
@@ -349,7 +349,7 @@ spec:
             subPath: kibana.yml
       volumes:
         - name: kibana-config
-          configMap:
+          ConfigMap:
             name: kibana-config
 ```
 
@@ -382,11 +382,11 @@ spec:
 
 <img title="" src="../../images/2025-01-15-centralized-monitoring/671cfe670dd8032345f7676e4a543a6c4365b438.png" alt="loading-ag-703" data-align="center">
 
-ELK Stack에서는 주로 FileBeat를 사용하여 로그를 수집하고 Logstash를 사용하여 Parsing 및 출력하게 됩니다. 엘라스틱서치와 키바나는 그대로 두고 **FileBeat + Logstash**가 플루언트 비트처럼 쿠버네티스 메타데이터가 추가된 nginx 로그를 수집하고 처리할 수 있도록 **elastic사의 공식 문서**를 참고하여 configuration 해줬습니다.
+ELK Stack에서는 주로 FileBeat를 사용하여 로그를 수집하고 Logstash를 사용하여 Parsing 및 출력하게 됩니다. 엘라스틱서치와 키바나는 그대로 두고 **FileBeat + Logstash**가 플루언트 비트처럼 쿠버네티스 메타데이터가 추가된 nginx 로그를 수집하고 처리할 수 있도록 **elastic사의 공식 문서**를 참고하여 Configuration 해줬습니다.
 
 ### FileBeat
 
-FileBeat 설정에 **processor**를 정의하여 쿠버네티스 메타 데이터를 붙일 수 있도록 해주었고 플루언트 비트에서 사용한 serviceaccount와 RBAC를 동일하게 적용하여 마찬가지로 데몬셋 형태로 실행했습니다.
+FileBeat 설정에 **processor**를 정의하여 쿠버네티스 메타 데이터를 붙일 수 있도록 해주었고 플루언트 비트에서 사용한 ServiceAccount와 RBAC를 동일하게 적용하여 마찬가지로 데몬셋 형태로 실행했습니다.
 
 ```yaml
 apiVersion: v1
@@ -452,7 +452,7 @@ spec:
               fieldPath: spec.nodeName
       volumes:
       - name: filebeat-config
-        configMap:
+        ConfigMap:
           name: filebeat-config
       - name: log-dir
         hostPath:
@@ -464,7 +464,7 @@ spec:
 
 ### Logstash
 
-Logstash는 FileBeat에서 수집하고 메타데이터를 얹은 로그를 필터를 통해 파싱합니다. Logstash 공식 문서를 참고하여 로그 메시지를 아파치 로그 형태로 변환하고 중복되거나 불필요한 필드를 제거한 다음 엘라스틱서치에 output하는 파이프라인 설정 파일 configmap을 작성해 주었습니다.
+Logstash는 FileBeat에서 수집하고 메타데이터를 얹은 로그를 필터를 통해 파싱합니다. Logstash 공식 문서를 참고하여 로그 메시지를 아파치 로그 형태로 변환하고 중복되거나 불필요한 필드를 제거한 다음 엘라스틱서치에 output하는 파이프라인 설정 파일 ConfigMap을 작성해 주었습니다.
 
 ```yaml
 apiVersion: v1
@@ -504,7 +504,7 @@ data:
       elasticsearch {
         hosts => ["elasticsearch:9200"]
         manage_template => false
-        index => "todo-logstash"
+        index => "todo-logstash-%{[agent.version]}"
       }
       stdout { codec => rubydebug }
     }
@@ -566,13 +566,13 @@ spec:
             value: "-Xms256m -Xmx256m"
       volumes:
       - name: logstash-yml
-        configMap:
+        ConfigMap:
           name: logstash-config
           items:
           - key: logstash.yml
             path: logstash.yml
       - name: logstash-pipeline
-        configMap:
+        ConfigMap:
           name: logstash-config
           items:
           - key: logstash.conf
