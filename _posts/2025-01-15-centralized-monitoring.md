@@ -8,7 +8,7 @@ sidebar:
     nav: "docs"
 ---
 
-모든 서비스 애플리케이션은 운영 history를 남기기 위해 log를 쌓도록 되어 있습니다. 로그는 주로 서버에서 생성되고 특정 스토리지 공간에 보관되다가 logrotate와 같은 도구로 오래된 로그를 삭제하는 방식으로 관리되는데요. 하지만 수십 대 이상의 서버로 구성된 운영 환경에서 문제가 발생한다고 가정했을 때 서버 한 대씩 접속해서 로그를 확인하는 식으로 추적하는 방식은 대응을 상당 시간 지연시킬 수 있습니다.
+모든 서비스 애플리케이션은 운영 history를 남기기 위해 log를 쌓도록 되어 있습니다. 로그는 주로 서버에서 생성되고 특정 스토리지 공간에 보관되다가 logrotate와 같은 프로세스로 오래된 로그를 삭제하는 방식으로 관리되는데요. 하지만 수십 대 이상의 서버로 구성된 운영 환경에서 문제가 발생했을 때 서버 한 대씩 접속해서 로그를 확인하는 식으로 추적하는 방식은 대응을 상당 시간 지연시킬 수 있습니다.
 
 가독성 높은 format으로 로그를 잘 생성하고 삭제하는 것도 중요하지만, 로그를 적절한 곳에 보관하고 손쉽게 확인할 수 있도록 하는 것도 중요합니다. 따라서 노드에 관계없이 이슈를 쉽게 확인할 수 있도록 로그 모니터링을 중앙화 할 수 있는 도구들이 실제 SRE 환경에서 많이 사용되는데요.
 
@@ -164,7 +164,7 @@ data:
         Path              /var/log/containers/*todo-proxy*.log
         Parser            nginx
         Refresh_Interval  10
-  
+
   parsers.conf: |
     [PARSER]
         Name    kube-tag
@@ -174,7 +174,7 @@ data:
     [PARSER]
         Name   nginx
         Format regex
-        Regex  ^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?
+        Regex  /^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)"(?:\s+(?<http_x_forwarded_for>[^ ]+))?)?$/
         Time_Key time
         Time_Format %d/%b/%Y:%H:%M:%S %z
 
@@ -372,11 +372,11 @@ spec:
   type: NodePort
 ```
 
-<img title="" src="../../images/2025-01-15-centralized-monitoring/2025-01-19-23-54-45-image.png" alt="loading-ag-689" data-align="center">
+<img title="" src="../../images/2025-01-15-centralized-monitoring/8d3d8296788e1048f5fa8f76e7397ab2c4076c12.png" alt="loading-ag-664" data-align="center">
 
-샘플 애플리케이션에 접속하면 로그가 nginx 파서를 통해 처리되어 엘라스틱서치의 test 인덱스에 저장되고, Kibana에서 해당 인덱스에서 로그를 출력할 수 있도록 할 수 있습니다. 모든 UI 설정을 마치고 나면 비로소 모든 노드의 애플리케이션 파드에서 생성한 로그를 하나의 화면에서 확인할 수 있게 됩니다.
+샘플 애플리케이션에 접속하면 로그가 nginx 파서를 통해 처리되어 지정한 엘라스틱서치 인덱스에 저장되고 Kibana에서 해당 인덱스의 로그를 확인할 수 있습니다. 모든 UI 설정을 마치고 나면 비로소 모든 노드의 애플리케이션 파드에서 생성한 로그를 하나의 화면에서 확인할 수 있게 됩니다.
 
-<img title="" src="../../images/2025-01-15-centralized-monitoring/2025-01-20-00-09-54-image.png" alt="loading-ag-687" data-align="center">
+<img title="" src="../../images/2025-01-15-centralized-monitoring/613a8d77a81d4bbf7e902d7caef8564e469f85af.png" alt="loading-ag-657" data-align="center">
 
 ## ELK
 
@@ -504,7 +504,7 @@ data:
       elasticsearch {
         hosts => ["elasticsearch:9200"]
         manage_template => false
-        index => "todo-logstash-%{[agent.version]}"
+        index => "todo-logstash"
       }
       stdout { codec => rubydebug }
     }
@@ -579,11 +579,13 @@ spec:
             path: logstash.conf
 ```
 
-<img title="" src="../../images/2025-01-15-centralized-monitoring/2025-01-22-00-06-34-image.png" alt="loading-ag-456" data-align="center">
+동일하게 Kibana에서 인덱스 패턴을 생성하면 Logstash로 수집한 로그를 확인할 수 있습니다.
+
+<img title="" src="../../images/2025-01-15-centralized-monitoring/5be7e6ddd4d2f87bc4814e3ba889d7b0be8514ad.png" alt="loading-ag-862" data-align="center">
 
 ## 정해진 답은 없다.
 
-이렇게 EFK와 ELK Stack을 직접 구성해 보면서 모든 리소스의 로그를 중앙에서 모니터링할 수 있는 환경의 편리함을 직접 체험해 봤는데요. EFK는 많은 종류의 플러그인을 제공하고 좀 더 가벼운 사양에서 로그를 수집하고 처리할 수 있다는 장점이 있고, ELK는 상대적으로 높은 성능과 복잡도를 요구하지만 모든 도구 스택이 elastic사에서 개발되어 로그 필터링에 대한 레퍼런스 정보를 더 쉽게 찾아볼 수 있다는 장점이 있는 것 같습니다.
+이렇게 EFK와 ELK Stack을 직접 구성해 보면서 모든 리소스의 로그를 중앙에서 모니터링할 수 있는 환경의 편리함을 직접 체험해 봤는데요. EFK는 많은 종류의 플러그인을 제공하고 좀 더 가벼운 사양에서 로그를 수집하고 처리할 수 있다는 장점이 있고, ELK는 상대적으로 높은 성능과 복잡도를 요구하지만 모든 도구 스택이 Elastic사에서 개발되어 로그 필터링에 대한 레퍼런스 정보를 더 쉽게 찾아볼 수 있다는 장점이 있는 것 같습니다.
 
 #### <center>"바퀴를 새로 발명하지 마라"</center>
 
