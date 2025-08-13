@@ -53,7 +53,7 @@ spec:
       labels:
         app: fluent-bit
     spec:
-      serviceAccountName: log-collector
+      ServiceAccountName: log-collector
       containers:
       - name: fluent-bit
         image: fluent/fluent-bit
@@ -77,7 +77,7 @@ spec:
           path: /var/lib/docker/containers
 ```
 
-플루언트 비트는 **쿠버네티스 환경을 위한 내장 필터 기능**이 있어 로그에 파드와 네임스페이스 정보 메타데이터를 태그로 추가할 수 있는데요. 이를 위해서는 쿠버네티스 API 서버를 호출할 수 있는 권한이 필요하기 때문에 **serviceaccount**와 적절한 **RBAC**가 부여되어야 합니다.
+플루언트 비트는 **쿠버네티스 환경을 위한 내장 필터 기능**이 있어 로그에 파드와 네임스페이스 정보 메타데이터를 태그로 추가할 수 있는데요. 이를 위해서는 쿠버네티스 API 서버를 호출할 수 있는 권한이 필요하기 때문에 **ServiceAccount**와 적절한 **RBAC**가 부여되어야 합니다.
 
 ```yaml
 apiVersion: v1
@@ -431,7 +431,7 @@ spec:
       labels:
         app: filebeat
     spec:
-      serviceAccountName: log-collector
+      ServiceAccountName: log-collector
       containers:
       - name: filebeat
         image: docker.elastic.co/beats/filebeat-oss:7.10.2
@@ -597,7 +597,7 @@ FileBeat와 플루언트디(플루언트 비트), Logstash는 **개발자의 부
 
 ## 로그 수집기 파드에 대한 보안 꼭 신경쓰기
 
-실제 운영 환경에서는 애플리케이션 로그 뿐만 아니라 message나 syslog 같은 시스템 로그를 처리하는 파이프라인도 구성할 수 있습니다. 앞의 플루언트 비트와 FileBeat 데몬셋을 살펴보면 모든 로그를 수집하고 처리한다고 가정하고 로그 디렉토리를 통째로 mount한 것을 볼 수 있는데요. 즉 <span style="color:red">로그 수집기 파드에 접근할 수 있는 사용자라면 누구나 시스템의 모든 로그를 확인할 수 있다는 것을 의미합니다.</span> 그래서 반드시 권한을 가진 사용자만 로그 수집기 파드에 접근할 수 있도록 사용자 접근 제어가 꼭 필요합니다. 그리고 **로그 수집기 파드가 파드명과 네임스페이스 등 메타데이터를 수집해서 붙일 경우 꼭 필요한 권한만 가질 수 있도록 serviceaccount와 RBAC 설정이 꼭 필요합니다.**
+실제 운영 환경에서는 애플리케이션 로그 뿐만 아니라 message나 syslog 같은 시스템 로그를 처리하는 파이프라인도 구성할 수 있습니다. 앞의 플루언트 비트와 FileBeat 데몬셋을 살펴보면 모든 로그를 수집하고 처리한다고 가정하고 로그 디렉토리를 통째로 mount한 것을 볼 수 있는데요. 즉 <span style="color:red">로그 수집기 파드에 접근할 수 있는 사용자라면 누구나 시스템의 모든 로그를 확인할 수 있다는 것을 의미합니다.</span> 그래서 반드시 권한을 가진 사용자만 로그 수집기 파드에 접근할 수 있도록 사용자 접근 제어가 꼭 필요합니다. 그리고 **로그 수집기 파드가 파드명과 네임스페이스 등 메타데이터를 수집해서 붙일 경우 꼭 필요한 권한만 가질 수 있도록 ServiceAccount와 RBAC 설정이 꼭 필요합니다.**
 
 #### References
 
