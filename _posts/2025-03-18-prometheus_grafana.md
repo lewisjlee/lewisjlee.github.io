@@ -123,7 +123,7 @@ spec:
 
 `--web.enable-lifecycle` 는 **프로메테우스 설정을 변경하면 재기동 없이 reload할 수 있도록 지원하는 Argument** 입니다. 이 Argument를 추가하면 **SIGHUP signal 혹은 /-/reload path로의 HTTP POST 요청을 통해 설정을 다시 읽어들일 수 있습니다.** 변경된 애플리케이션 설정값을 반영하기 위해 다시 rollout을 하는 것이 꽤나 신중함이 필요한 일인데요. 프로메테우스는 HTTP 메소드 호출을 통해 설정값 반영이 가능하다는 점이 편리하게 다가옵니다.
 
-### 프로메테우스 configuration
+## 프로메테우스 configuration
 
 프로메테우스에서는 Job(잡)을 정의할 수 있고, 메트릭을 Scrape(스크랩)하고 Relabeling(리레이블링)할 수 있습니다. **프로메테우스는 규칙들을 Label(레이블)을 기준으로 처리합니다.**
 
