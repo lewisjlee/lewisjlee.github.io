@@ -65,7 +65,7 @@ sidebar:
 - `net.ipv4.tcp_syncookies` - 보내는 SYN Segment에 Cookie값 추가
 - `net.ipv4.tcp_synack_retries` - Passive SYN/ACK 재전송 횟수
 
-SYN Flooding 공격을 방지하고 정상적인 TCP 연결을 보장하기 위한 파라미터입니다. <span style="color:red">SYN Flooding은 다수의 좀비 노드를 통해 SYN 세그먼트를 동시다발적으로 전송하고 돌아오는 ACK/SYN에 대한 응답을 제공하지 않아 시스템을 장시간 대기 상태로 만드는 공격인데요.</span> ACK/SYN 세그먼트를 응답할 때 쿠킷값을 추가하여 같은 Source로부터 다시 수신된 SYN를 무시하고 SYN/ACK 응답 횟수 제한을 설정하여 SYN Flooding 공격에 효과적으로 대응할 수 있습습니다.
+SYN Flooding 공격을 방지하고 정상적인 TCP 연결을 보장하기 위한 파라미터입니다. <span style="color:red">SYN Flooding은 다수의 좀비 노드를 통해 SYN 세그먼트를 동시다발적으로 전송하고 돌아오는 ACK/SYN에 대한 응답을 제공하지 않아 시스템을 장시간 대기 상태로 만드는 공격인데요.</span> ACK/SYN 세그먼트를 응답할 때 쿠킷값을 추가하여 같은 Source로부터 다시 수신된 SYN를 무시하고 SYN/ACK 응답 횟수 제한을 설정하여 SYN Flooding 공격에 효과적으로 대응할 수 있습니다.
 
 - `net.ipv4.conf.all.arp_notify`- IPv4 주소나 장비 변경 시 알림
 - `net.ipv4.conf.default.accept_redirects` - redirect된 ICMP 수신 활성화 여부
