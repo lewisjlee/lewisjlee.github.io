@@ -291,9 +291,17 @@ spec:
 
 ```yaml
       - job_name: 'node-exporter'
-        static_configs:
-        - targets:
-            - node-exporter.monitoring.svc.cluster.local:9100
+        kubernetes_sd_configs:
+        - role: pod
+        relabel_configs:
+        - source_labels:
+            - __meta_kubernetes_namespace
+            - __meta_kubernetes_pod_name
+          regex: monitoring;node-exporter-\w+
+          action: keep
+        - source_labels:
+            - __meta_kubernetes_pod_node_name
+          target_label: instance
 ```
 
 컨트롤 플레인 또한 모니터링 대상이기 때문에 데몬셋 정의에 toleration을 추가해 주었습니다.
@@ -302,7 +310,7 @@ spec:
 
 ### kube-state-metrics
 
-다음으로 kube-state-metrics를 소개하려고 합니다. 프로메테우스는 API 서버를 통해 쿠버네티스 클러스터의 메타데이터를 얻어올 순 있지만 객체에 대한 상태 정보는 가져올 수 없습니다. 이 때 kube-state-metrics라는 컴포넌트를 배치하면 이러한 상태 정보 메트릭들을 수집할 수 있는데요. **kube-state-metrics는 쿠버네티스 클러스터의 개별 컴포넌트보단 파드, 노드, 디플로이먼트, 컨피그맵 등 쿠버네티스에서 지원하는 다양한 객체의 상태 정보를 가져오는 데 중점을 두고 있습니다.**
+프로메테우스는 API 서버를 통해 쿠버네티스 클러스터의 메타데이터를 얻어올 순 있지만 객체에 대한 상태 정보는 가져올 수 없습니다. 이 때 kube-state-metrics라는 컴포넌트를 배치하면 이러한 상태 정보 메트릭들을 수집할 수 있는데요. **kube-state-metrics는 쿠버네티스 클러스터의 개별 컴포넌트보단 파드, 노드, 디플로이먼트, 컨피그맵 등 쿠버네티스에서 지원하는 다양한 객체의 상태 정보를 가져오는 데 중점을 두고 있습니다.**
 
 ```yaml
 apiVersion: v1
