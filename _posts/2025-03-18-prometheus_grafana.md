@@ -241,7 +241,7 @@ data:
 
 - `__meta_kubernetes_pod_name` : 파드 이름을 저장하는 레이블
 
-- `instance` : 리레이블링이 끝나고 난 후 설정되는 레이블로 **주로 수집 대상을 지칭하는 이름을 저장 (기본값 : `__address__`)**
+- `instance` : 모든 리레이블링이 끝나고 난 후 설정되는 레이블로 **주로 수집 대상을 지칭하는 이름을 저장 (기본값 : `__address__`)**
 
 파드 레이블을 기준으로 잡을 정의하고 싶을 때 사용할 수 있는 규칙입니다. 그리고 수집 대상을 지칭하는 레이블인 `instance`에 기본값인 URL이 아닌 파드 이름을 저장하여 가독성을 높일 수 있습니다.
 
@@ -291,17 +291,9 @@ spec:
 
 ```yaml
       - job_name: 'node-exporter'
-        kubernetes_sd_configs:
-        - role: pod
-        relabel_configs:
-        - source_labels:
-            - __meta_kubernetes_namespace
-            - __meta_kubernetes_pod_name
-          regex: monitoring;node-exporter-\w+
-          action: keep
-        - source_labels:
-            - __meta_kubernetes_pod_node_name
-          target_label: instance
+        static_configs:
+        - targets:
+            - node-exporter.monitoring.svc.cluster.local:9100
 ```
 
 컨트롤 플레인 또한 모니터링 대상이기 때문에 데몬셋 정의에 toleration을 추가해 주었습니다.
