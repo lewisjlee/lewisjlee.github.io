@@ -304,201 +304,56 @@ spec:
 
 컨트롤 플레인 또한 모니터링 대상이기 때문에 데몬셋 정의에 toleration을 추가해 주었습니다.
 
-모니터링 네임스페이스에 배치되고 파드 이름이 노드 익스포터로 시작하는 대상의 레이블을 그대로 유지하고, 파드가 배치된 노드 이름을 `instance`로 리레이블링하여 어떤 노드의 메트릭인지 쉽게 알아볼 수 있도록 규칙을 설정해 주었습니다.<img title="" src="../../images/2025-03-18-prometheus_grafana/b8cd49934dc0229de7f273bcbb5887c9442054c0.png" alt="loading-ag-1145" data-align="center">노드 익스포터는 'node_'로 시작하는 많은 다양한 메트릭들을 노출하는데요. 노드 익스포터를 통해 노드의 CPU 사용량과 Disk I/O, 네트워크 트래픽 등의 정보를 수집할 수 있습니다. 이전에 사용했던 glance와 정말 흡사한데요. 노드 익스포터는 **프로메테우스에서 함께 사용하길 권장하는 도구**이니만큼 프로메테우스 스택을 사용하여 시스템을 모니터링하려고 한다면 꼭 함께 도입해볼 수 있겠습니다.
+모니터링 네임스페이스에 배치되고 파드 이름이 노드 익스포터로 시작하는 대상의 레이블을 그대로 유지하고, 파드가 배치된 노드 이름을 `instance`로 리레이블링하여 어떤 노드의 메트릭인지 쉽게 알아볼 수 있도록 규칙을 설정해 주었습니다.
+
+<img title="" src="../../images/2025-03-18-prometheus_grafana/b8cd49934dc0229de7f273bcbb5887c9442054c0.png" alt="loading-ag-1145" data-align="center">
+
+노드 익스포터는 `node_`로 시작하는 많은 다양한 메트릭들을 노출하는데 노드의 CPU 사용량과 Disk I/O, 네트워크 트래픽 등의 정보를 수집할 수 있습니다. 이전에 사용했던 glance와 비슷한데요. 노드 익스포터는 **프로메테우스에서 함께 사용하길 권장하는 도구**이니만큼 프로메테우스 스택을 사용하여 시스템을 모니터링하려고 한다면 꼭 함께 도입해볼 수 있겠습니다.
 
 ## kube-state-metrics
 
-프로메테우스는 API 서버를 통해 쿠버네티스 클러스터의 메타데이터를 얻어올 순 있지만 객체에 대한 상태 정보는 가져올 수 없습니다. 이 때 kube-state-metrics라는 컴포넌트를 배치하면 이러한 상태 정보 메트릭들을 수집할 수 있는데요. **kube-state-metrics는 쿠버네티스 클러스터의 개별 컴포넌트보단 파드, 노드, 디플로이먼트, 컨피그맵 등 쿠버네티스에서 지원하는 다양한 객체의 상태 정보를 가져오는 데 중점을 두고 있습니다.**
+프로메테우스는 API 서버를 통해 쿠버네티스 클러스터의 메타데이터를 얻어올 순 있지만 객체에 대한 상태 정보는 가져올 수 없습니다. 이 때 kube-state-metrics라는 컴포넌트를 배치하면 이러한 상태 정보 메트릭들을 수집할 수 있죠. kube-state-metrics는 쿠버네티스 클러스터의 개별 컴포넌트보단 `kube_`로 시작하는  **파드, 노드, 디플로이먼트, 컨피그맵 등 쿠버네티스에서 지원하는 다양한 객체의 상태 메트릭을 가져오는 데 중점을 두고 있습니다.**
+
+kube-state-metrics는 공식 github에서 helm 차트나 개별 매니페스트로 설치할 수 있습니다.
 
 ```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: kube-state-metrics
-  namespace: kube-system
-  labels:
-    app: kube-state-metrics
-spec:
-  ports:
-  - name: http-metrics
-    port: 8080
-    targetPort: http-metrics
-  - name: telemetry
-    port: 8081
-    targetPort: telemetry
-  selector:
-    app: kube-state-metrics
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: kube-state-metrics
-  namespace: kube-system
-  labels:
-    app: kube-state-metrics
-spec:
-  selector:
-    matchLabels:
-      app: kube-state-metrics
-  template:
-    metadata:
-      labels:
-        app: kube-state-metrics
-    spec:
-      serviceAccountName: kube-state-metrics
-      containers:
-      - image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.15.0
-        name: kube-state-metrics
-        ports:
-        - containerPort: 8080
-          name: http-metrics
-        - containerPort: 8081
-          name: telemetry
+      - job_name: 'kube-state-metrics'
+        static_configs:
+        - targets: # kube-state-metrics 서비스에 직접 접근하여 메트릭 수집
+            - kube-state-metrics.kube-system.svc.cluster.local:8080
+            - kube-state-metrics.kube-system.svc.cluster.local:8081
 ```
 
-```yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: kube-state-metrics
-  namespace: kube-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: kube-state-metrics
-  labels:
-    app: kube-state-metrics
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - secrets
-  - nodes
-  - pods
-  - services
-  - resourcequotas
-  - replicationcontrollers
-  - limitranges
-  - persistentvolumeclaims
-  - persistentvolumes
-  - namespaces
-  - endpoints
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - extensions
-  resources:
-  - daemonsets
-  - deployments
-  - replicasets
-  - ingresses
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - statefulsets
-  - daemonsets
-  - deployments
-  - replicasets
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - batch
-  resources:
-  - cronjobs
-  - jobs
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - autoscaling
-  resources:
-  - horizontalpodautoscalers
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - authentication.k8s.io
-  resources:
-  - tokenreviews
-  verbs:
-  - create
-- apiGroups:
-  - authorization.k8s.io
-  resources:
-  - subjectaccessreviews
-  verbs:
-  - create
-- apiGroups:
-  - policy
-  resources:
-  - poddisruptionbudgets
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - certificates.k8s.io
-  resources:
-  - certificatesigningrequests
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - storage.k8s.io
-  resources:
-  - storageclasses
-  - volumeattachments
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - mutatingwebhookconfigurations
-  - validatingwebhookconfigurations
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - networkpolicies
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - coordination.k8s.io
-  resources:
-  - leases
-  verbs:
-  - list
-  - watch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: kube-state-metrics
-  labels:
-    app: kube-state-metrics
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: kube-state-metrics
-subjects:
-- kind: ServiceAccount
-  name: kube-state-metrics
-  namespace: kube-system
-```
-
-kube-state-metrics는 8080과 8081 두 가지 포트로 메트릭을 노출하기 때문에 이들 포트로 서비스를 배치하고, 객체 상태 정보를 API 서버를 통해 가져올 수 있어야 하므로 적절한 RBAC를 생성해 줍니다. <span style="color:red">거의 모든 객체 정보에 대한 접근 권한을 가지므로 list, watch외 다른 verb를 갖지 않도록 주의해야 합니다.</span>
+위의 프로메테우스 설정이 다른 수집 대상과 조금 다른 것을 확인할 수 있는데요. kube-state-metrics 자체가 유용한 쿠버네티스 객체 메트릭을 노출하기 때문에 쿠버네티스 API 서버로부터 수집 대상을 찾지 않고 kube-state-metrics에 직접 접근하여 메트릭을 스크래핑하는 설정입니다.
 
 <img title="" src="../../images/2025-03-18-prometheus_grafana/91601b25c158d0b92e3d4a12a92e822ccd06e981.png" alt="loading-ag-3564" data-align="center">
+
+<img title="" src="../../images/2025-03-18-prometheus_grafana/98807fb857c1abfa2d19851b6a281d15cc355602.png" alt="loading-ag-762" data-align="center">
+
+## cAdvisor
+
+cAdvisor는 파드 내 컨테이너의 메트릭을 수집할 수 있는 도구입니다. 원래 kubelet에는 cAdvisor가 포함되지만 보안 문제로 특정 쿠버네티스 버전에서부터 kubelet 내장 cAdvisor에 대한 접근 엔드포인트를 지원하지 않게 되었습니다. 그래서 프로메테우스가 파드 내 컨테이너의 메트릭을 수집하기 위해서는 별도의 cAdvisor를 설치해야 하죠.
+
+cAdvisor 역시 공식 github를 참고하여 데몬셋으로 설치할 수 있습니다.
+
+```yaml
+      - job_name: 'cadvisor'
+        kubernetes_sd_configs:
+        - role: pod
+        relabel_configs:
+        - source_labels:
+            - __meta_kubernetes_namespace
+            - __meta_kubernetes_pod_labelpresent_name
+            - __meta_kubernetes_pod_label_name
+          action: keep
+          regex: cadvisor;true;cadvisor
+```
+
+위와 같이 cadvisor 파드에서 메트릭을 스크래핑하는 설정을 추가해 줍니다.
+
+<img title="" src="../../images/2025-03-18-prometheus_grafana/8df14cc5ccf327711d881a8e9449feb28b7f0c3f.png" alt="loading-ag-788" data-align="center">
+
+<img title="" src="../../images/2025-03-18-prometheus_grafana/8334711703c1a7e508c04d0340189e7679ee7b88.png" alt="loading-ag-781" data-align="center">
 
 ## Grafana
 
@@ -575,6 +430,10 @@ stringData:
 
 테스트를 마치면 Dashboard 메뉴에서 새로운 대시보드를 생성하고 visualization이라는 그래프를 생성하여 적용할 수 있습니다. 하나의 Dashboard에 여러 개의 visualization이라는 그래프를 포함하는 형태로 그래프는 Time Series, Gauge, Stat 등 다양한 유형을 선택할 수 있습니다.
 
+
+
+혹은 그라파나 공식 사이트에서는 다양한 환경의 예제 대시보드를 제공하므로 json을 다운받아서 config에 적용하거나 ID를 그라파나 UI에서 Import하여 대시보드를 즉시 생성할 수 있습니다.
+
 <img title="" src="../../images/2025-03-18-prometheus_grafana/2025-03-30-23-46-25-image.png" alt="loading-ag-1388" data-align="center">
 
 ![loading-ag-3570](../../images/2025-03-18-prometheus_grafana/d7329b4979a556ed626489938663e9d6763af931.png)
@@ -608,6 +467,8 @@ Elton Stoneman. (2021). 쿠버네티스 교과서. 길벗출판사
 [Monitoring Linux host metrics with the Node Exporter](https://prometheus.io/docs/guides/node-exporter/)
 
 [GitHub - kubernetes/kube-state-metrics: Add-on agent to generate and expose cluster-level metrics.](https://github.com/kubernetes/kube-state-metrics?tab=readme-ov-file)
+
+[GitHub - google/cadvisor: Analyzes resource usage and performance characteristics of running containers.](https://github.com/google/cadvisor)
 
 [Comparison to InfluxDB](https://prometheus.io/docs/introduction/comparison/#prometheus-vs-influxdb)
 
