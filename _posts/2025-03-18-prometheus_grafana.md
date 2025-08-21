@@ -430,8 +430,6 @@ stringData:
 
 테스트를 마치면 Dashboard 메뉴에서 새로운 대시보드를 생성하고 visualization이라는 그래프를 생성하여 적용할 수 있습니다. 하나의 Dashboard에 여러 개의 visualization이라는 그래프를 포함하는 형태로 그래프는 Time Series, Gauge, Stat 등 다양한 유형을 선택할 수 있습니다.
 
-
-
 혹은 그라파나 공식 사이트에서는 다양한 환경의 예제 대시보드를 제공하므로 json을 다운받아서 config에 적용하거나 ID를 그라파나 UI에서 Import하여 대시보드를 즉시 생성할 수 있습니다.
 
 <img title="" src="../../images/2025-03-18-prometheus_grafana/2025-03-30-23-46-25-image.png" alt="loading-ag-1388" data-align="center">
@@ -469,6 +467,8 @@ Elton Stoneman. (2021). 쿠버네티스 교과서. 길벗출판사
 [GitHub - kubernetes/kube-state-metrics: Add-on agent to generate and expose cluster-level metrics.](https://github.com/kubernetes/kube-state-metrics?tab=readme-ov-file)
 
 [GitHub - google/cadvisor: Analyzes resource usage and performance characteristics of running containers.](https://github.com/google/cadvisor)
+
+[Grafana, dashboards](https://grafana.com/grafana/dashboards/)
 
 [Comparison to InfluxDB](https://prometheus.io/docs/introduction/comparison/#prometheus-vs-influxdb)
 
