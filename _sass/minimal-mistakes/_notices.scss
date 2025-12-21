@@ -74,42 +74,36 @@
 
 /* Default notice */
 
-.notice,
-.markdown-alert {
+.notice {
   @include notice($light-gray);
 }
 
 /* Primary notice */
 
-.notice--primary,
-.markdown-alert-important {
+.notice--primary {
   @include notice($primary-color);
 }
 
 /* Info notice */
 
-.notice--info,
-.markdown-alert-note {
+.notice--info {
   @include notice($info-color);
 }
 
 /* Warning notice */
 
-.notice--warning,
-.markdown-alert-warning {
+.notice--warning {
   @include notice($warning-color);
 }
 
 /* Success notice */
 
-.notice--success,
-.markdown-alert-tip {
+.notice--success {
   @include notice($success-color);
 }
 
 /* Danger notice */
 
-.notice--danger,
-.markdown-alert-caution {
+.notice--danger {
   @include notice($danger-color);
 }
