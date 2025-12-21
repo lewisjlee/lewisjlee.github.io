@@ -115,8 +115,8 @@ analytics:
 author:
   name             : "LewisJLee"
   avatar           : # path of avatar image, e.g. "/assets/images/bio-photo.jpg"
-  bio              : "SRE/DevOps Engineer | System Administrator"
-  location         : "Sungnam South Korea"
+  bio              : "IT Specialist"
+  location         : "Seongnam South Korea"
   links:
     - label: "Email"
       icon: "fas fa-fw fa-envelope-square"
