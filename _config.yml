@@ -21,7 +21,7 @@ title                    : "Scorpius"
 title_separator          : "|"
 subtitle                 : "Better today than yesterday" # site tagline that appears below site title in masthead
 name                     : "LewisJLee"
-description              : "Sophisticating DevOps Technician"
+description              : "IT Specialist"
 url                      : "https://lewisjlee.github.io"
 baseurl                  : # the subpath of your site, e.g. "/blog"
 repository               : # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
@@ -115,7 +115,7 @@ analytics:
 author:
   name             : "LewisJLee"
   avatar           : # path of avatar image, e.g. "/assets/images/bio-photo.jpg"
-  bio              : "DevOps && System && Infra Engineer"
+  bio              : "IT Specialist"
   location         : "Seongnam South Korea"
   links:
     - label: "Email"
